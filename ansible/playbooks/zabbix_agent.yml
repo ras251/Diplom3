@@ -1,0 +1,53 @@
+# ./ansible/playbooks/zabbix_agent.yml
+---
+- name: 📋 Install and configure Zabbix Agent on all hosts
+  hosts: all # Важно: устанавливаем на ВСЕ хосты
+  become: true
+  vars:
+    zabbix_server_fqdn: "{{ groups['zabbix_server'][0] }}.ru-central1.internal" # Получаем FQDN первого сервера из группы
+
+  tasks:
+    - name: Install Zabbix agent
+      apt:
+        name: zabbix-agent
+        state: present
+        update_cache: yes
+
+    - name: Configure Zabbix agent server (where to send data)
+      lineinfile:
+        path: /etc/zabbix/zabbix_agentd.conf
+        regexp: '^Server='
+        line: 'Server={{ zabbix_server_fqdn }}'
+        state: present
+      notify:
+        - Restart Zabbix Agent
+
+    - name: Configure Zabbix agent server for active checks
+      lineinfile:
+        path: /etc/zabbix/zabbix_agentd.conf
+        regexp: '^ServerActive='
+        line: 'ServerActive={{ zabbix_server_fqdn }}'
+        state: present
+      notify:
+        - Restart Zabbix Agent
+
+    - name: Configure Zabbix agent Hostname (must be unique)
+      lineinfile:
+        path: /etc/zabbix/zabbix_agentd.conf
+        regexp: '^Hostname='
+        line: 'Hostname={{ inventory_hostname }}'
+        state: present
+      notify:
+        - Restart Zabbix Agent
+
+    - name: Start and enable Zabbix agent
+      service:
+        name: zabbix-agent
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Zabbix Agent
+      service:
+        name: zabbix-agent
+        state: restarted

@@ -1,0 +1,25 @@
+# ./ansible/site.yml
+---
+# Дипломный проект: Отказоустойчивая инфраструктура с мониторингом и сбором логов
+# Порядок важен: сначала бастион, потом базовые сервисы, затем мониторинг и логи, в конце агенты и информация
+
+- name: "🔐 1. Настройка Bastion хоста"
+  import_playbook: playbooks/bastion.yml
+
+- name: "🌐 2. Развертывание и настройка Веб-серверов (Nginx + Filebeat)"
+  import_playbook: playbooks/webservers.yml
+
+- name: "📊 3. Установка и настройка Zabbix Server"
+  import_playbook: playbooks/zabbix_server.yml
+
+- name: "📝 4. Установка и настройка Elasticsearch"
+  import_playbook: playbooks/elasticsearch.yml
+
+- name: "📈 5. Установка и настройка Kibana"
+  import_playbook: playbooks/kibana.yml
+
+- name: "📋 6. Установка Zabbix Agent на все хосты"
+  import_playbook: playbooks/zabbix_agent.yml
+
+- name: "✅ 7. Финальная информация и валидация"
+  import_playbook: playbooks/final_info.yml

@@ -1,0 +1,22 @@
+---
+# Переменные для веб-серверов
+nginx_version: stable
+website_root: /var/www/html
+website_name: "diploma-website"
+
+nginx_config:
+  user: www-data
+  worker_processes: auto
+  worker_connections: 1024
+  keepalive_timeout: 65
+  gzip: on
+
+filebeat_nginx_logs:
+  - paths: ["/var/log/nginx/access.log"]
+    fields:
+      log_type: "nginx_access"
+      environment: "production"
+  - paths: ["/var/log/nginx/error.log"]
+    fields:
+      log_type: "nginx_error"
+      environment: "production"

@@ -1,0 +1,89 @@
+---
+# Специфичные переменные для Web Server 2
+hostname: web2
+fqdn: web2.ru-central1.internal
+
+# Сетевые настройки
+network:
+  interface: eth0
+  ip_address: "192.168.30.10"
+  gateway: "192.168.30.1"
+  dns_servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+
+# Настройки Nginx
+nginx:
+  worker_processes: 2
+  worker_connections: 1024
+  keepalive_timeout: 65
+  gzip: "on"
+  server_names_hash_bucket_size: 64
+
+# Настройки сайта
+website:
+  name: "Diploma Web Server 2"
+  root: "/var/www/html"
+  index: "index.html index.htm"
+  access_log: "/var/log/nginx/access.log"
+  error_log: "/var/log/nginx/error.log"
+
+# Настройки Zabbix Agent
+zabbix_agent:
+  server: "zabbix.ru-central1.internal"
+  server_active: "zabbix.ru-central1.internal"
+  hostname: "web2.ru-central1.internal"
+  listen_port: 10050
+  timeout: 30
+  enable_remote_commands: 0
+  log_remote_commands: 0
+
+# Настройки Filebeat
+filebeat:
+  enabled: true
+  elasticsearch_host: "elasticsearch.ru-central1.internal:9200"
+  nginx_logs:
+    - path: "/var/log/nginx/access.log"
+      fields:
+        log_type: "nginx_access"
+        environment: "production"
+        host: "web2"
+        zone: "ru-central1-b"
+    - path: "/var/log/nginx/error.log"
+      fields:
+        log_type: "nginx_error"
+        environment: "production"
+        host: "web2"
+        zone: "ru-central1-b"
+
+# Мониторинг
+monitoring:
+  enabled: true
+  metrics:
+    - cpu
+    - memory
+    - disk
+    - network
+    - nginx
+
+# Резервное копирование
+backup:
+  enabled: true
+  schedule: "daily"
+  retention_days: 7
+  include:
+    - "/var/www/html"
+    - "/etc/nginx"
+    - "/var/log/nginx"
+
+# Системные настройки
+system:
+  timezone: "Europe/Moscow"
+  locale: "en_US.UTF-8"
+  packages:
+    - nginx
+    - zabbix-agent
+    - filebeat
+    - htop
+    - iotop
+    - nload

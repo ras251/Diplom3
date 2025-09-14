@@ -1,0 +1,119 @@
+# ./ansible/playbooks/webservers.yml
+---
+- name: 🌐 Configure web servers (Nginx + Filebeat)
+  hosts: web_servers
+  become: true
+  vars:
+    elasticsearch_host: "elasticsearch.ru-central1.internal"
+
+  tasks:
+    # Блок задач для Nginx
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Create website directory
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Deploy static index.html
+      copy:
+        src: files/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Ensure nginx service is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    # Блок задач для Filebeat
+    - name: Install dependencies (wget)
+      apt:
+        name: wget
+        state: present
+        update_cache: yes
+
+    # В блоке Filebeat замените URL:
+    - name: Download Filebeat from Yandex Mirror
+      get_url:
+        url: "https://mirror.yandex.ru/mirrors/elastic/7/pool/main/f/filebeat/filebeat-7.15.1-amd64.deb"
+        dest: /tmp/filebeat.deb
+        timeout: 120
+        validate_certs: no
+
+    - name: Install Filebeat from downloaded package
+      apt:
+        deb: /tmp/filebeat.deb
+        state: present
+      ignore_errors: yes
+      register: filebeat_install
+
+    - name: Check if Filebeat is already installed
+      debug:
+        msg: "Filebeat already installed, skipping installation"
+      when: filebeat_install is failed and "'later version is already installed' in filebeat_install.msg"   
+
+    - name: Create Filebeat configuration directory
+      file:
+        path: /etc/filebeat
+        state: directory
+        mode: '0755'
+
+    - name: Configure Filebeat for nginx logs
+      copy:
+        content: |
+          filebeat.inputs:
+          - type: log
+            enabled: true
+            paths:
+              - /var/log/nginx/access.log
+            fields:
+              log_type: "nginx_access"
+            fields_under_root: true
+
+          - type: log
+            enabled: true
+            paths:
+              - /var/log/nginx/error.log
+            fields:
+              log_type: "nginx_error"
+            fields_under_root: true
+
+          output.elasticsearch:
+            hosts: ["{{ elasticsearch_host }}:9200"]
+            indices:
+              - index: "nginx-access-%{+yyyy.MM.dd}"
+                when.equals:
+                  fields.log_type: "nginx_access"
+              - index: "nginx-error-%{+yyyy.MM.dd}"
+                when.equals:
+                  fields.log_type: "nginx_error"
+
+          setup.template.name: "nginx"
+          setup.template.pattern: "nginx-*"
+        dest: /etc/filebeat/filebeat.yml
+        mode: '0644'
+      notify:
+        - Restart Filebeat
+
+    - name: Enable and start Filebeat service
+      service:
+        name: filebeat
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Filebeat
+      service:
+        name: filebeat
+        state: restarted

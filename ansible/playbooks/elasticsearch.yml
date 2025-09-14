@@ -1,0 +1,94 @@
+# ./ansible/playbooks/elasticsearch.yml
+---
+- name: 📝 Install and configure Elasticsearch
+  hosts: elastic_server
+  become: true
+
+  tasks:
+    - name: Install OpenJDK 17 (Debian 12 compatible)
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Download Elasticsearch from Yandex Mirror
+      get_url:
+        url: "https://mirror.yandex.ru/mirrors/elastic/7/pool/main/e/elasticsearch/elasticsearch-7.15.1-amd64.deb"
+        dest: /tmp/elasticsearch.deb
+        timeout: 600
+        validate_certs: no
+
+    - name: Install Elasticsearch from deb package
+      apt:
+        deb: /tmp/elasticsearch.deb
+        state: present
+
+    - name: Configure Elasticsearch
+      copy:
+        content: |
+          cluster.name: diploma-cluster
+          node.name: "{{ inventory_hostname }}"
+          network.host: 0.0.0.0
+          http.port: 9200
+          discovery.type: single-node
+          xpack.security.enabled: false
+          path.data: /var/lib/elasticsearch
+          path.logs: /var/log/elasticsearch
+        dest: /etc/elasticsearch/elasticsearch.yml
+        owner: elasticsearch
+        group: elasticsearch
+        mode: '0644'
+
+    - name: Configure JVM settings
+      copy:
+        content: |
+          -Xms512m
+          -Xmx512m
+        dest: /etc/elasticsearch/jvm.options.d/diploma.options
+        owner: elasticsearch
+        group: elasticsearch
+        mode: '0644'
+
+    - name: Ensure proper permissions
+      file:
+        path: "{{ item }}"
+        owner: elasticsearch
+        group: elasticsearch
+        recurse: yes
+      loop:
+        - /var/lib/elasticsearch
+        - /var/log/elasticsearch
+
+    - name: Start and enable Elasticsearch service
+      service:
+        name: elasticsearch
+        state: started
+        enabled: yes
+
+    - name: Wait for Elasticsearch to start
+      wait_for:
+        port: 9200
+        host: 127.0.0.1
+        timeout: 120
+        delay: 10
+
+    - name: Check Elasticsearch status properly
+      shell: |
+        # Даем Elasticsearch больше времени на запуск
+        sleep 10
+        # Проверяем доступность корректно
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9200 || echo "not-running")
+        echo $HTTP_STATUS
+      register: es_status
+      changed_when: false
+      retries: 3
+      delay: 15
+
+    - name: Show Elasticsearch status
+      debug:
+        msg: |
+          Elasticsearch installation completed!
+          Service: Running
+          HTTP Access: {{ es_status.stdout }}
+          You can access it at: http://{{ inventory_hostname }}:9200
+          Cluster: diploma-cluster

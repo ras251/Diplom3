@@ -1,0 +1,18 @@
+# Ansible
+*.retry
+*.log
+
+# Конфиденциальные данные
+*.key
+*.pem
+*.env
+
+secrets.yml
+vault.yml
+inventory.ini
+
+# Временные файлы
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db

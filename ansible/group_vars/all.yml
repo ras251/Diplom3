@@ -1,0 +1,48 @@
+---
+# Общие переменные для всех хостов
+timezone: Europe/Moscow
+ntp_servers:
+  - pool.ntp.org
+  - ntp.yandex.ru
+
+# Пакеты для установки
+common_packages:
+  - curl
+  - wget
+  - git
+  - unzip
+  - htop
+  - ntp
+  - ntpdate
+
+# Настройки Zabbix Agent
+zabbix_agent_version: '7.0'
+zabbix_server: "zabbix.ru-central1.internal"
+zabbix_server_port: 10051
+zabbix_agent_hostname: "{{ inventory_hostname }}"
+zabbix_agent_server: "zabbix.ru-central1.internal"
+zabbix_agent_serveractive: "zabbix.ru-central1.internal" 
+zabbix_agent_listenport: 10050
+
+# Настройки Elasticsearch
+elasticsearch_version: '7.15.1'
+elasticsearch_cluster_name: "diploma-cluster"
+elasticsearch_node_name: "{{ inventory_hostname }}"
+elasticsearch_port: 9200
+elasticsearch_host: "elasticsearch.ru-central1.internal"
+elasticsearch_username: ""
+elasticsearch_password: ""
+
+# Настройки Kibana
+kibana_version: '7.15.1'
+kibana_server_port: 5601
+
+# Настройки Filebeat
+filebeat_version: '7.15.1'
+filebeat_elasticsearch_host: "elasticsearch.ru-central1.internal:9200"
+
+
+mysql_root_password: "secure_root_password_123"
+zabbix_db_password: "zabbix_db_password_123"
+website_root: "/var/www/html"
+

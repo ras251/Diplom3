@@ -1,0 +1,25 @@
+# Zabbix Agent configuration
+PidFile=/var/run/zabbix/zabbix_agentd.pid
+LogFile=/var/log/zabbix/zabbix_agentd.log
+LogFileSize=0
+
+# Zabbix Server connection
+Server={{ zabbix_server_ip | default('127.0.0.1') }}
+ServerActive={{ zabbix_server_ip | default('127.0.0.1') }}
+Hostname={{ inventory_hostname }}
+
+# Security
+EnableRemoteCommands=0
+LogRemoteCommands=0
+
+# Performance
+StartAgents=3
+Timeout=3
+AllowRoot=0
+Include=/etc/zabbix/zabbix_agentd.d/*.conf
+
+# TLS settings (optional)
+# TLSConnect=unencrypted
+# TLSAccept=unencrypted
+# TLSPSKIdentity=
+# TLSPSKFile=

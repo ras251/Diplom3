@@ -1,0 +1,86 @@
+---
+# Специфичные переменные для Kibana Server
+hostname: kibana
+fqdn: kibana.ru-central1.internal
+
+# Сетевые настройки
+network:
+  interface: eth0
+  ip_address: "192.168.10.40"
+  gateway: "192.168.10.1"
+  dns_servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+
+# Настройки Kibana
+kibana:
+  version: "7.17.24"
+  server_host: "0.0.0.0"
+  server_port: 5601
+  server_name: "kibana.ru-central1.internal"
+  elasticsearch_hosts: ["http://elasticsearch.ru-central1.internal:9200"]
+  elasticsearch_request_timeout: 30000
+  elasticsearch_shard_timeout: 30000
+  log_destination: "/var/log/kibana/kibana.log"
+
+# Настройки визуализаций
+kibana_dashboards:
+  - name: "nginx-access-logs"
+    title: "Nginx Access Logs Dashboard"
+    index_pattern: "nginx-access-*"
+  - name: "nginx-error-logs"
+    title: "Nginx Error Logs Dashboard"
+    index_pattern: "nginx-error-*"
+
+# Настройки индексов
+kibana_index_patterns:
+  - name: "nginx-access-*"
+    time_field: "@timestamp"
+    title: "Nginx Access Logs"
+  - name: "nginx-error-*"
+    time_field: "@timestamp"
+    title: "Nginx Error Logs"
+
+# Настройки безопасности
+security:
+  enabled: false
+  encryption_key: "changeme_in_production_123"
+
+# Мониторинг
+monitoring:
+  enabled: true
+  metrics:
+    - cpu
+    - memory
+    - disk
+    - network
+    - kibana
+
+# Резервное копирование
+backup:
+  enabled: true
+  schedule: "daily"
+  retention_days: 7
+  include:
+    - "/etc/kibana"
+    - "/usr/share/kibana"
+    - "/var/log/kibana"
+
+# Системные настройки
+system:
+  timezone: "Europe/Moscow"
+  locale: "en_US.UTF-8"
+  packages:
+    - kibana
+    - nginx
+    - htop
+    - iotop
+    - nload
+
+# Настройки Nginx для проксирования Kibana
+nginx_kibana:
+  enabled: true
+  listen_port: 80
+  server_name: "kibana.ru-central1.internal"
+  proxy_pass: "http://127.0.0.1:5601"
+  ssl: false

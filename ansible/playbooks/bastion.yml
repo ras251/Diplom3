@@ -1,0 +1,41 @@
+# ./ansible/playbooks/bastion.yml
+---
+- name: 🛡️ Configure and secure bastion host
+  hosts: bastion
+  become: true
+  vars:
+    # Имя пользователя для подключения (должен быть создан Terraform'ом или в cloud-config)
+    admin_user: "{{ ansible_user }}"
+
+  tasks:
+    - name: Ensure OpenSSH server is installed and up to date
+      apt:
+        name: openssh-server
+        state: latest
+        update_cache: yes
+
+    - name: Ensure SSH service is started and enabled
+      service:
+        name: ssh
+        state: started
+        enabled: yes
+
+    - name: Harden SSH configuration (key-based auth only, disable password)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+        backup: yes
+      loop:
+        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+      notify:
+        - Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted

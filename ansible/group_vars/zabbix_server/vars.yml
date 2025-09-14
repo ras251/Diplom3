@@ -1,0 +1,4 @@
+---
+zabbix_db_password: "secure_password_123"
+
+zabbix_db_user: "zabbix"

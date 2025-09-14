@@ -1,0 +1,328 @@
+# ./ansible/playbooks/zabbix_server.yml
+---
+- name: 📊 Install and configure Zabbix Server 7.0 on Debian 12
+  hosts: zabbix_server
+  become: true
+  vars:
+    zabbix_db_name: "zabbix"
+    zabbix_db_user: "zabbix"
+    zabbix_db_password: "secure_password_123"
+    mysql_root_password: "root_password_123"
+    php_version: "8.2"
+
+  tasks:
+    - name: Remove any existing Zabbix packages
+      apt:
+        name:
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-agent
+          - zabbix-release
+        state: absent
+        purge: yes
+      ignore_errors: yes
+
+    - name: Clean up old repository files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/zabbix.list
+        - /etc/apt/sources.list.d/zabbix.list.save
+        - /var/lib/apt/lists/*zabbix*
+      ignore_errors: yes
+
+    - name: Clean apt cache
+      apt:
+        autoclean: yes
+        autoremove: yes
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - default-mysql-server
+          - default-mysql-client
+          - python3-pymysql
+          - wget
+          - apache2
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - lsb-release
+          - gnupg
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Ensure MySQL service is started and enabled
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Check if MySQL root password is already set
+      stat:
+        path: /root/.mysql_password_set
+      register: mysql_password_status
+
+    - name: Set MySQL root password (if not set)
+      shell: |
+        # Проверяем, можно ли подключиться без пароля
+        if sudo mysql -u root -e "SELECT 1" >/dev/null 2>&1; then
+          # Устанавливаем пароль для root
+          sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}'; FLUSH PRIVILEGES;"
+          echo "MySQL root password set successfully"
+        else
+          # Пароль уже установлен, проверяем его правильность
+          if sudo mysql -u root -p'{{ mysql_root_password }}' -e "SELECT 1" >/dev/null 2>&1; then
+            echo "MySQL root password already set and correct"
+          else
+            echo "MySQL root password is set but incorrect" >&2
+            exit 1
+          fi
+        fi
+      args:
+        executable: /bin/bash
+      when: not mysql_password_status.stat.exists
+      register: set_mysql_password
+      changed_when: "'password set successfully' in set_mysql_password.stdout"
+
+    - name: Mark MySQL password as set
+      file:
+        path: /root/.mysql_password_set
+        state: touch
+        mode: '0644'
+      when: not mysql_password_status.stat.exists and set_mysql_password.changed
+
+    - name: Download Zabbix 7.0 repository package for Debian 12
+      get_url:
+        url: "https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_7.0-1+debian12_all.deb"
+        dest: /tmp/zabbix-release.deb
+        timeout: 60
+
+    - name: Install Zabbix repository
+      apt:
+        deb: /tmp/zabbix-release.deb
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Zabbix 7.0 components
+      apt:
+        name:
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-agent
+          - zabbix-sql-scripts
+        state: present
+
+    - name: Get Zabbix server package version using dpkg
+      shell: |
+        dpkg -s zabbix-server-mysql | grep '^Version:' | cut -d' ' -f2
+      register: zabbix_version_output
+      changed_when: false
+
+    - name: Show installed Zabbix version
+      debug:
+        msg: "Installed Zabbix version: {{ zabbix_version_output.stdout }}"
+
+    - name: Create Apache configuration for Zabbix
+      copy:
+        content: |
+          <VirtualHost *:80>
+            ServerName zabbix.ru-central1.internal
+            DocumentRoot /usr/share/zabbix
+
+            <Directory "/usr/share/zabbix">
+              Options FollowSymLinks
+              AllowOverride None
+              Require all granted
+
+              <FilesMatch \.php$>
+                SetHandler application/x-httpd-php
+              </FilesMatch>
+            </Directory>
+
+            <Directory "/usr/share/zabbix/conf">
+              Require all denied
+            </Directory>
+
+            <Directory "/usr/share/zabbix/app">
+              Require all denied
+            </Directory>
+
+            <Directory "/usr/share/zabbix/include">
+              Require all denied
+            </Directory>
+
+            <Directory "/usr/share/zabbix/local">
+              Require all denied
+            </Directory>
+
+            ErrorLog ${APACHE_LOG_DIR}/zabbix_error.log
+            CustomLog ${APACHE_LOG_DIR}/zabbix_access.log combined
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/zabbix.conf
+        mode: '0644'
+
+    - name: Enable Zabbix site and disable default
+      shell: |
+        a2ensite zabbix.conf
+        a2dissite 000-default.conf
+      args:
+        executable: /bin/bash
+
+    - name: Enable required Apache modules
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - headers
+
+    - name: Create Zabbix database
+      community.mysql.mysql_db:
+        name: "{{ zabbix_db_name }}"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create Zabbix database user
+      community.mysql.mysql_user:
+        name: "{{ zabbix_db_user }}"
+        password: "{{ zabbix_db_password }}"
+        state: present
+        priv: "{{ zabbix_db_name }}.*:ALL"
+        host: localhost
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Check if Zabbix schema already imported
+      stat:
+        path: /etc/zabbix/.schema_imported
+      register: schema_status
+
+    - name: Import initial Zabbix server schema
+      shell: |
+        gunzip -c /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql -uroot -p{{ mysql_root_password }} -D {{ zabbix_db_name }}
+      when: not schema_status.stat.exists
+      notify:
+        - Restart Zabbix Server
+
+    - name: Mark schema as imported
+      file:
+        path: /etc/zabbix/.schema_imported
+        state: touch
+        mode: '0644'
+      when: not schema_status.stat.exists
+
+    - name: Configure Zabbix server DB connection
+      lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        state: present
+      loop:
+        - { key: "DBHost", value: "localhost" }
+        - { key: "DBName", value: "{{ zabbix_db_name }}" }
+        - { key: "DBUser", value: "{{ zabbix_db_user }}" }
+        - { key: "DBPassword", value: "{{ zabbix_db_password }}" }
+      notify:
+        - Restart Zabbix Server
+
+    - name: Configure Zabbix server to listen on all interfaces
+      lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        regexp: "^#?ListenIP="
+        line: "ListenIP=0.0.0.0"
+        state: present
+      notify:
+        - Restart Zabbix Server
+
+    - name: Configure PHP timezone for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?date.timezone ="
+        line: "date.timezone = Europe/Moscow"
+        state: present
+      notify:
+        - Restart Apache
+
+    - name: Set PHP memory limit for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?memory_limit ="
+        line: "memory_limit = 256M"
+        state: present
+      notify:
+        - Restart Apache
+
+    - name: Set PHP post max size for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?post_max_size ="
+        line: "post_max_size = 32M"
+        state: present
+      notify:
+        - Restart Apache
+
+    - name: Set PHP upload max filesize for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?upload_max_filesize ="
+        line: "upload_max_filesize = 16M"
+        state: present
+      notify:
+        - Restart Apache
+        
+    - name: Set PHP max execution time for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?max_execution_time ="
+        line: "max_execution_time = 300"
+        state: present
+      notify:
+       - Restart Apache
+
+    - name: Set PHP max input time for Zabbix
+      lineinfile:
+        path: /etc/php/{{ php_version }}/apache2/php.ini
+        regexp: "^;?max_input_time ="
+        line: "max_input_time = 300"
+        state: present
+      notify:
+        - Restart Apache
+
+    - name: Ensure services are started and enabled
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - zabbix-server
+        - zabbix-agent
+        - apache2
+
+    - name: Ensure proper permissions for Zabbix web directory
+      file:
+        path: /usr/share/zabbix
+        owner: www-data
+        group: www-data
+        recurse: yes
+
+  handlers:
+    - name: Restart Zabbix Server
+      service:
+        name: zabbix-server
+        state: restarted
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+
+    

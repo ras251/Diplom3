@@ -1,0 +1,16 @@
+# ./ansible/playbooks/final_info.yml
+---
+- name: ✅ Final project info
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Create project info file
+      copy:
+        content: |
+          Diploma Project - {{ inventory_hostname }}
+          Role: {{ group_names | join(', ') }}
+          IP: {{ ansible_default_ipv4.address }}
+          Deployed: {{ ansible_date_time.iso8601 }}
+        dest: /etc/diploma-info.txt
+        mode: '0644'

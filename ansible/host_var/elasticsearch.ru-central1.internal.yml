@@ -1,0 +1,96 @@
+---
+# Специфичные переменные для Elasticsearch Server
+hostname: elasticsearch
+fqdn: elasticsearch.ru-central1.internal
+
+# Сетевые настройки
+network:
+  interface: eth0
+  ip_address: "192.168.20.30"
+  gateway: "192.168.20.1"
+  dns_servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+
+# Настройки Elasticsearch
+elasticsearch:
+  version: "7.17.24"
+  cluster_name: "diploma-cluster"
+  node_name: "elasticsearch.ru-central1.internal"
+  network_host: "0.0.0.0"
+  http_port: 9200
+  transport_port: 9300
+  discovery_type: "single-node"
+  heap_size: "1g"
+  data_path: "/var/lib/elasticsearch"
+  logs_path: "/var/log/elasticsearch"
+
+# Настройки JVM
+jvm:
+  xms: "1g"
+  xmx: "1g"
+  options: >
+    -XX:+UseConcMarkSweepGC
+    -XX:CMSInitiatingOccupancyFraction=75
+    -XX:+UseCMSInitiatingOccupancyOnly
+    -Djava.awt.headless=true
+    -Dfile.encoding=UTF-8
+    -Djna.nosys=true
+
+# Плагины Elasticsearch
+elasticsearch_plugins:
+  - repository-s3
+
+# Индексы
+elasticsearch_indices:
+  nginx_access:
+    shards: 1
+    replicas: 0
+    retention_days: 30
+  nginx_error:
+    shards: 1
+    replicas: 0
+    retention_days: 30
+
+# Настройки безопасности
+security:
+  xpack_security_enabled: false
+  network_bind_host: "0.0.0.0"
+  network_publish_host: "{{ network.ip_address }}"
+
+# Мониторинг
+monitoring:
+  enabled: true
+  metrics:
+    - cpu
+    - memory
+    - disk
+    - network
+    - elasticsearch
+
+# Резервное копирование
+backup:
+  enabled: true
+  schedule: "daily"
+  retention_days: 7
+  include:
+    - "/etc/elasticsearch"
+    - "/var/lib/elasticsearch"
+    - "/var/log/elasticsearch"
+
+# Системные настройки
+system:
+  timezone: "Europe/Moscow"
+  locale: "en_US.UTF-8"
+  packages:
+    - elasticsearch
+    - openjdk-11-jdk
+    - htop
+    - iotop
+    - nload
+
+# Лимиты системы
+system_limits:
+  memlock: unlimited
+  nofile: 65536
+  nproc: 4096

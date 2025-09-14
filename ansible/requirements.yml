@@ -1,0 +1,32 @@
+---
+collections:
+  - name: community.general
+    version: 7.0.0
+
+roles:
+  - src: git+https://github.com/nginxinc/ansible-role-nginx.git
+    version: main
+    name: nginx
+
+  - src: git+https://github.com/dj-wasabi/ansible-zabbix-server.git
+    version: master
+    name: zabbix_server
+
+  - src: git+https://github.com/dj-wasabi/ansible-zabbix-agent.git
+    version: master
+    name: zabbix_agent
+
+  - src: git+https://github.com/elastic/ansible-elasticsearch.git
+    version: 7.17.24
+    name: elasticsearch
+
+  - src: git+https://github.com/elastic/ansible-kibana.git
+    version: 7.17.24
+    name: kibana
+
+  - src: git+https://github.com/elastic/ansible-beats.git
+    version: 7.17.24
+    name: filebeat
+
+
+   

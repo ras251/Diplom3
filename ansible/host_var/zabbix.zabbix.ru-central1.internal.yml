@@ -1,0 +1,96 @@
+---
+# переменные для Zabbix Server
+hostname: zabbix
+fqdn: zabbix.ru-central1.internal
+
+# Сетевые настройки
+network:
+  interface: eth0
+  ip_address: "192.168.10.20"
+  gateway: "192.168.10.1"
+  dns_servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+
+# Настройки Zabbix Server
+zabbix_server:
+  version: "7.0"
+  db_host: "localhost"
+  db_name: "zabbix"
+  db_user: "zabbix"
+  db_password: "zabbix_password_123"
+  db_port: 3306
+  listen_port: 10051
+  listen_ip: "0.0.0.0"
+  php_timezone: "Europe/Moscow"
+  alertscriptspath: "/usr/lib/zabbix/alertscripts"
+  externalscripts: "/usr/lib/zabbix/externalscripts"
+
+# Настройки Zabbix Frontend
+zabbix_frontend:
+  url: "http://zabbix.ru-central1.internal"
+  timezone: "Europe/Moscow"
+  theme: "blue-theme"
+
+# Настройки Zabbix Agent
+zabbix_agent:
+  server: "127.0.0.1"
+  server_active: "127.0.0.1"
+  hostname: "zabbix.ru-central1.internal"
+  listen_port: 10050
+
+# Настройки MySQL
+mysql:
+  root_password: "root_password_123"
+  zabbix_password: "zabbix_db_password_123"
+  bind_address: "127.0.0.1"
+  max_connections: 100
+  buffer_pool_size: "256M"
+
+# Настройки Apache
+apache:
+  listen_port: 80
+  server_name: "zabbix.ru-central1.internal"
+  document_root: "/usr/share/zabbix"
+  max_keepalive_requests: 100
+  keepalive_timeout: 5
+
+# Мониторинг
+monitoring:
+  enabled: true
+  self_monitoring: true
+  metrics:
+    - cpu
+    - memory
+    - disk
+    - network
+    - mysql
+    - apache
+    - zabbix
+
+# Резервное копирование
+backup:
+  enabled: true
+  schedule: "daily"
+  retention_days: 7
+  include:
+    - "/etc/zabbix"
+    - "/usr/share/zabbix"
+    - "/var/lib/mysql"
+    - "/etc/mysql"
+    - "/etc/apache2"
+
+# Системные настроки
+system:
+  timezone: "Europe/Moscow"
+  locale: "en_US.UTF-8"
+  packages:
+    - zabbix-server-mysql
+    - zabbix-frontend-php
+    - zabbix-apache-conf
+    - zabbix-agent
+    - mysql-server
+    - apache2
+    - php
+    - htop
+    - iotop

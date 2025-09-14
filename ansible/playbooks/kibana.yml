@@ -1,0 +1,43 @@
+# ./ansible/playbooks/kibana.yml
+---
+- name: 📈 Install and configure Kibana
+  hosts: kibana_server
+  become: true
+
+  tasks:
+    - name: Download Kibana from Yandex Mirror
+      get_url:
+        url: "https://mirror.yandex.ru/mirrors/elastic/7/pool/main/k/kibana/kibana-7.15.1-amd64.deb"
+        dest: /tmp/kibana.deb
+        timeout: 600
+        validate_certs: no
+
+    - name: Install Kibana from deb package
+      apt:
+        deb: /tmp/kibana.deb
+        state: present
+
+    - name: Configure Kibana
+      copy:
+        content: |
+          server.host: "0.0.0.0"
+          server.port: 5601
+          elasticsearch.hosts: ["http://elasticsearch.ru-central1.internal:9200"]
+          elasticsearch.requestTimeout: 30000
+        dest: /etc/kibana/kibana.yml
+        owner: kibana
+        group: kibana
+        mode: '0644'
+
+    - name: Start and enable Kibana service
+      service:
+        name: kibana
+        state: started
+        enabled: yes
+
+    - name: Wait for Kibana to start
+      wait_for:
+        port: 5601
+        host: 127.0.0.1
+        timeout: 120
+        delay: 10

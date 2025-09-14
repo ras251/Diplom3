@@ -1,0 +1,6 @@
+server.host: "{{ kibana_host }}"
+server.port: {{ kibana_port }}
+server.name: "{{ inventory_hostname }}"
+elasticsearch.hosts: ["http://{{ elasticsearch_host }}:{{ elasticsearch_port }}"]
+elasticsearch.requestTimeout: 30000
+logging.dest: /var/log/kibana/kibana.log
