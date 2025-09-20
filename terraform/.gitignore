@@ -1,0 +1,62 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+terraform.tfstate.lock.info
+.terraform.lock.hcl
+*.tfvars
+
+
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Large files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Sensitive data
+*.key
+*.pem
+*.crt
+*.csr
+*.env
+*.secret
+credentials.yml
+config.yml
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Virtual machines
+*.vdi
+*.vmdk
+*.vmx
+
+# Packages
+*.deb
+*.rpm
+*.msi
+*.app
+*.exe
+
+# Documentation
+_site/
+.sass-cache/
+.jekyll-cache/
