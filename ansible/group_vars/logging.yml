@@ -1,5 +1,5 @@
 ---
-# Переменные для логирования
+
 elasticsearch_heap_size: "1g"
 elasticsearch_host: "0.0.0.0"
 elasticsearch_port: 9200

@@ -1,5 +1,5 @@
 ---
-# Специфичные переменные для Elasticsearch Server
+
 hostname: elasticsearch
 fqdn: elasticsearch.ru-central1.internal
 
@@ -37,11 +37,11 @@ jvm:
     -Dfile.encoding=UTF-8
     -Djna.nosys=true
 
-# Плагины Elasticsearch
+
 elasticsearch_plugins:
   - repository-s3
 
-# Индексы
+
 elasticsearch_indices:
   nginx_access:
     shards: 1

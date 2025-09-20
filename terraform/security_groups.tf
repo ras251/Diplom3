@@ -24,6 +24,13 @@ resource "yandex_vpc_security_group" "web_sg" {
   description = "Security group for web servers"
   network_id  = yandex_vpc_network.main.id
 
+  # ДОБАВЛЕНО: Разрешить внутреннюю коммуникацию в подсети
+  ingress {
+    description    = "Internal communication within subnet"
+    protocol       = "ANY"
+    v4_cidr_blocks = ["192.168.20.0/24", "192.168.30.0/24"]
+  }
+
   ingress {
     description    = "HTTP from public subnet (for ALB)"
     protocol       = "TCP"
@@ -63,6 +70,13 @@ resource "yandex_vpc_security_group" "zabbix_sg" {
   name        = "zabbix-security-group"
   description = "Security group for zabbix server"
   network_id  = yandex_vpc_network.main.id
+
+  # ДОБАВЛЕНО: Разрешить внутреннюю коммуникацию в подсети
+  ingress {
+    description    = "Internal communication within subnet"
+    protocol       = "ANY"
+    v4_cidr_blocks = ["192.168.10.0/24"]
+  }
 
   ingress {
     description    = "HTTP from anywhere"
@@ -118,6 +132,13 @@ resource "yandex_vpc_security_group" "elasticsearch_sg" {
   description = "Security group for elasticsearch"
   network_id  = yandex_vpc_network.main.id
 
+  # ДОБАВЛЕНО: Разрешить внутреннюю коммуникацию в подсети (для Filebeat с web серверов)
+  ingress {
+    description    = "Internal communication within subnet"
+    protocol       = "ANY"
+    v4_cidr_blocks = ["192.168.20.0/24", "192.168.30.0/24"]
+  }
+
   ingress {
     description       = "Elasticsearch from kibana"
     protocol          = "TCP"
@@ -157,6 +178,13 @@ resource "yandex_vpc_security_group" "kibana_sg" {
   name        = "kibana-security-group"
   description = "Security group for kibana"
   network_id  = yandex_vpc_network.main.id
+
+  # ДОБАВЛЕНО: Разрешить внутреннюю коммуникацию в подсети
+  ingress {
+    description    = "Internal communication within subnet"
+    protocol       = "ANY"
+    v4_cidr_blocks = ["192.168.10.0/24"]
+  }
 
   ingress {
     description    = "Kibana web interface from anywhere"
