@@ -1,4 +1,4 @@
-# ./ansible/playbooks/zabbix_server.yml
+
 ---
 - name: 📊 Install and configure Zabbix Server 7.0 on Debian 12
   hosts: zabbix_server

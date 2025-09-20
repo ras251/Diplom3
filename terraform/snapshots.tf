@@ -1,4 +1,4 @@
-# Snapshot schedule для всех ВМ
+# Snapshot 
 resource "yandex_compute_snapshot_schedule" "daily_backup" {
   name           = "daily-snapshots-dip"
   retention_period = "168h" # 7 дней

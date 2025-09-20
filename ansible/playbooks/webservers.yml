@@ -1,4 +1,4 @@
-# ./ansible/playbooks/webservers.yml
+
 ---
 - name: 🌐 Configure web servers (Nginx + Filebeat)
   hosts: web_servers

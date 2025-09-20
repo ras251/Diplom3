@@ -1,4 +1,4 @@
-# ./ansible/playbooks/final_info.yml
+
 ---
 - name: ✅ Final project info
   hosts: all

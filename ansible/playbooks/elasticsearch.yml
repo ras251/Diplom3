@@ -1,4 +1,4 @@
-# ./ansible/playbooks/elasticsearch.yml
+
 ---
 - name: 📝 Install and configure Elasticsearch
   hosts: elastic_server

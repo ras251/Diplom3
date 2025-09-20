@@ -1,7 +1,7 @@
-# ./ansible/playbooks/zabbix_agent.yml
+
 ---
 - name: 📋 Install and configure Zabbix Agent on all hosts
-  hosts: all # Важно: устанавливаем на ВСЕ хосты
+  hosts: all 
   become: true
   vars:
     zabbix_server_fqdn: "{{ groups['zabbix_server'][0] }}.ru-central1.internal" # Получаем FQDN первого сервера из группы

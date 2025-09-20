@@ -16,7 +16,7 @@ elasticsearch.ru-central1.internal ansible_host=${elasticsearch_private_ip}
 [kibana_server]
 kibana.ru-central1.internal ansible_host=${kibana_public_ip}
 
-# Только для внутренних хостов используем bastion
+# внутр 
 [internal:children]
 web_servers
 elastic_server
@@ -24,7 +24,7 @@ elastic_server
 [internal:vars]
 ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -q debian@${bastion_public_ip}"'
 
-# Для публичных хостов прямое подключение  
+# публ  
 [public:children]
 bastion
 zabbix_server

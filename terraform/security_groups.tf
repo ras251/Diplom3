@@ -1,4 +1,4 @@
-# Security Group для Bastion
+# Sec Group для Bastion
 resource "yandex_vpc_security_group" "bastion_sg" {
   name        = "bastion-security-group"
   description = "Security group for bastion host"

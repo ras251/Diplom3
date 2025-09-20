@@ -1,4 +1,4 @@
-# ./ansible/playbooks/kibana.yml
+
 ---
 - name: 📈 Install and configure Kibana
   hosts: kibana_server

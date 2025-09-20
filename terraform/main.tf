@@ -2,13 +2,13 @@ resource "yandex_vpc_network" "main" {
   name = "diploma-network"
 }
 
-# Создаем NAT Gateway (управляемый сервис)
+# NAT Gateway 
 resource "yandex_vpc_gateway" "nat_gateway" {
   name = "nat-gateway"
   shared_egress_gateway {}
 }
 
-# Создаем таблицу маршрутизации для приватных подсетей
+# таблиц маршрутизации 
 resource "yandex_vpc_route_table" "nat" {
   name       = "nat-route-table"
   network_id = yandex_vpc_network.main.id
